@@ -30,6 +30,6 @@ $files = array(
 );
 
 foreach($files as $file) {
-	//downloadFile($fcc_uls_url . $file . '.zip');
+	downloadFile($fcc_uls_url . $file . '.zip');
 	extractZip($file . '.zip');
 }

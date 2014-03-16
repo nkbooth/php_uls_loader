@@ -25,10 +25,24 @@ function extractZip($filename) {
 function downloadFile($url) {
 	$filename = explode("/", $url);
 	$filename = array_pop($filename);
-	echo "Downloading " . $filename . "\n";
+
+	// Let's check to see what the filesize is, if not different, we won't re-download
+	if(file_exists($filename)) {
+		echo 'Checking local file ' . $filename . "\n";
+		$cur_file = stat($filename);
+		$head = array_change_key_case(get_headers($url, TRUE));
+		$filesize = $head['content-length'];
+
+		if($filesize == $cur_file["size"]) {
+			echo 'Local file is same as remote file, not downloading again.' . "\n";
+			return;
+		}
+	}
+
+	echo 'Downloading ' . $filename . "\n";
 	
 	$ctx = stream_context_create();
-	stream_context_set_params($ctx, array("notification" => "stream_notification_callback"));
+	stream_context_set_params($ctx, array('notification' => 'stream_notification_callback'));
 	
 	$fp = fopen($url, "r", false, $ctx);
 	if (is_resource($fp) && file_put_contents($filename, $fp)) {
