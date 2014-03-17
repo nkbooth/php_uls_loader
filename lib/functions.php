@@ -6,13 +6,13 @@ function extractZip($filename) {
 	$basename = explode('.', $filename);
 	$basename = $basename[0];
 	$zip = zip_open($filename);
-
-	if($zip) {
-		while($zip_entry = zip_read($zip)) {
+	
+	if ($zip) {
+		while ($zip_entry = zip_read($zip)) {
 			$name = zip_entry_name($zip_entry);
-			if(in_array($name, $names)) {
-				if(zip_entry_open($zip, $zip_entry, "r")) {
-					echo('Writing file ' . $basename . '-' . $name . "\n");
+			if (in_array($name, $names)) {
+				if (zip_entry_open($zip, $zip_entry, "r")) {
+					echo ('Writing file ' . $basename . '-' . $name . "\n");
 					$buf = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
 					file_put_contents($basename . '-' . $name, $buf);
 					unset($buf);
@@ -22,27 +22,43 @@ function extractZip($filename) {
 	}
 }
 
+function processFilesRemoveBlankLines($base) {
+	$names = array('CP', 'EM', 'EN', 'FR', 'HD', 'LO', 'HS');
+
+	foreach ( $names as $name ) {
+		echo ('- Re-writing ' . $name . '.dat with blank lines removed.' . "\n");
+		$fhorig = fopen($base . '-' . $name . '.dat', 'r');
+		$fhnew = fopen($base . '-' . $name . '-new.dat', 'w+');
+
+		while ($line = fgets($fhorig)) {
+			fwrite($fhnew, rtrim($line) . "\n");
+		}
+		fclose($fhorig);
+		fclose($fhnew);
+	}
+}
+
 function downloadFile($url) {
 	$filename = explode("/", $url);
 	$filename = array_pop($filename);
 
 	// Let's check to see what the filesize is, if not different, we won't re-download
-	if(file_exists($filename)) {
+	if (file_exists($filename)) {
 		echo 'Checking local file ' . $filename . "\n";
 		$cur_file = stat($filename);
 		$head = array_change_key_case(get_headers($url, TRUE));
 		$filesize = $head['content-length'];
-
-		if($filesize == $cur_file["size"]) {
+		
+		if ($filesize == $cur_file["size"]) {
 			echo 'Local file is same as remote file, not downloading again.' . "\n";
 			return;
 		}
 	}
 
-	echo 'Downloading ' . $filename . "\n";
+	echo "Downloading " . $filename . "\n";
 	
 	$ctx = stream_context_create();
-	stream_context_set_params($ctx, array('notification' => 'stream_notification_callback'));
+	stream_context_set_params($ctx, array("notification" => "stream_notification_callback"));
 	
 	$fp = fopen($url, "r", false, $ctx);
 	if (is_resource($fp) && file_put_contents($filename, $fp)) {

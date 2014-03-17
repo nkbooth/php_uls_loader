@@ -23,13 +23,16 @@ $fcc_uls_url = 'http://wireless.fcc.gov/uls/data/complete/';
 $files = array(
 	//'l_LMpriv',
 	//'l_LMcomm',
-	//'l_LMbcast',
-	//'l_coast',
-	//'l_micro',
+	'l_LMbcast',
+	'l_coast',
+	'l_micro',
 	'l_paging',
 );
 
 foreach($files as $file) {
 	downloadFile($fcc_uls_url . $file . '.zip');
 	extractZip($file . '.zip');
+	processFilesRemoveBlankLines($file);
 }
+
+echo('Overall Memory Used: ' . (memory_get_peak_usage(true) / 1024 / 1024) . 'MB');
