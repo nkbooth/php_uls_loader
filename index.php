@@ -11,6 +11,7 @@
 
 require_once('lib/functions.php');
 
+ini_set('memory_limit', '1G');
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -21,8 +22,8 @@ $fcc_uls_url = 'http://wireless.fcc.gov/uls/data/complete/';
  */
 
 $files = array(
-	//'l_LMpriv',
-	//'l_LMcomm',
+	'l_LMpriv',
+	'l_LMcomm',
 	'l_LMbcast',
 	'l_coast',
 	'l_micro',

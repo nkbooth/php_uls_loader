@@ -1,24 +1,32 @@
 <?php
 
 function extractZip($filename) {
-	// List of filenames we are intrested in, from the zip files
 	$names = array('counts', 'CP.dat', 'EM.dat', 'EN.dat', 'FR.dat', 'HD.dat', 'LO.dat', 'HS.dat');
 	$basename = explode('.', $filename);
 	$basename = $basename[0];
-	$zip = zip_open($filename);
-	
-	if ($zip) {
-		while ($zip_entry = zip_read($zip)) {
-			$name = zip_entry_name($zip_entry);
-			if (in_array($name, $names)) {
-				if (zip_entry_open($zip, $zip_entry, "r")) {
-					echo ('Writing file ' . $basename . '-' . $name . "\n");
-					$buf = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
-					file_put_contents($basename . '-' . $name, $buf);
-					unset($buf);
-				}
+
+	$zip = new ZipArchive();
+	$res = $zip->open($filename);
+
+	if($res === TRUE) {
+		foreach($names as $name) {
+			echo ('Writing file ' . $name . "\n");
+			$zip->extractTo('./', $name);
+			if(rename($name, $basename . '-' . $name)) {
+				echo('-Renamed ' . $name . ' to ' . $basename . '-' . $name . "\n");
 			}
+			else {
+				echo('Failed to rename files, exiting.');
+				exit();
+			}
+
 		}
+		$zip->close();
+		echo('Extraction of ' . $basename . ' successful.' . "\n");
+	}
+	else {
+		echo('Could not extract ' . $basename . '.  Stopping process.');
+		exit();
 	}
 }
 
@@ -33,6 +41,7 @@ function processFilesRemoveBlankLines($base) {
 		while ($line = fgets($fhorig)) {
 			fwrite($fhnew, rtrim($line) . "\n");
 		}
+
 		fclose($fhorig);
 		fclose($fhnew);
 	}
