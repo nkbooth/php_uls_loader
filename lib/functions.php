@@ -19,7 +19,6 @@ function extractZip($filename) {
 				echo('Failed to rename files, exiting.');
 				exit();
 			}
-
 		}
 		$zip->close();
 		echo('Extraction of ' . $basename . ' successful.' . "\n");
