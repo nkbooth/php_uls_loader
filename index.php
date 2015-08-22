@@ -27,12 +27,13 @@ $fcc_uls_url = 'http://wireless.fcc.gov/uls/data/complete/';
  */
 
 $files = array(
-	'l_LMpriv',
-	'l_LMcomm',
-	'l_LMbcast',
-	'l_coast',
-	'l_micro',
-	'l_paging',
+	//'l_LMpriv',
+	//'l_LMcomm',
+	//'l_LMbcast',
+	//'l_coast',
+	//'l_micro',
+	//'l_paging',
+        'a_amat',
 );
 
 foreach($files as $file) {
