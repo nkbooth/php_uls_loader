@@ -5,6 +5,11 @@
  * in PHP, and hopefully in as small of a file that can be done
  * PHP version by Matt Carlson (KC0UDT)
  * 
+ * Original site seems down as of 2015-08-22, alternate link:
+ * https://web.archive.org/web/20150216181139/http://n6lhv.net/uls/
+ * 
+ * ULS Data File Format: http://wireless.fcc.gov/uls/data/documentation/pa_ddef41.pdf
+ * 
  * Licensed under Creative Commons License as per original project
  * http://creativecommons.org/licenses/by/2.0/
  */
