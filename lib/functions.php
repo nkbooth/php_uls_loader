@@ -81,54 +81,82 @@ function downloadFile($url) {
     }
 }
 
-function openFile($base, $con){
+function importFiles($base, $licenseDB, $applicationDB=null){
     $names = array('AM', 'CO', 'EN', 'HD', 'HS', 'LA', 'SC', 'SF');
-    
+    $inquiries = new sqlInquiries;
+
     foreach ($names as $name){
         echo "Opening $base-$name-new.dat\n";
-        $data = file_get_contents($base.'-'.$name.'-new.dat');
-        $fp = fopen("php://temp",'r+');
-        fputs($fp, $data);
-        rewind($fp);
         
-        $importer = [];
-        while (($temper = fgetcsv($fp,0,"|")) !== FALSE) {
-            $importer[] = $temper;
+        $importer = getFileContents($base, $name);
+        
+        if($base = 'l_amat') {
+            $db = $licenseDB;
+        } elseif ($base = 'a_amat') {
+            $db = $applicationDB;
         }
-        fclose($fp);
 
-        if($name == "AM") {
-            mysqli_query($con, "CREATE TEMPORARY TABLE AM_TEMP LIKE PUBACC_AM;");
+        switch ($name) {
+            case "AM":
+                $inquiries->createAMTemp($db);
 
-            $insertSQL = $con->prepare("INSERT INTO AM_TEMP (record_type, unique_system_identifier, uls_file_num, ebf_number, callsign, operator_class, group_code, region_code, trustee_callsign, trustee_indicator, physician_certification, ve_signature, systematic_callsign_change, vanity_callsign_change, vanity_relationship, previous_callsign, previous_operator_class, trustee_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
-            $insertSQL->bind_param("sisssssissssssssss", $recordType, $uniqueSystemIdentifier, $ulsFileNum, $ebfNumber, $callsign, $operatorClass, $groupCode, $regionCode, $trusteeCallsign, $trusteeIndicator, $physicianCertification, $veSignature, $systematicCallsignChange, $vanityCallsignChange, $vanityRelationship, $previousCallsign, $previousOperatorClass, $trusteeName);
+                $insertSQL = $db->prepare($inquiries->amTempInserter);
+                $insertSQL->bind_param("sisssssissssssssss", $recordType, $uniqueSystemIdentifier, $ulsFileNum, $ebfNumber, $callsign, $operatorClass, $groupCode, $regionCode, $trusteeCallsign, $trusteeIndicator, $physicianCertification, $veSignature, $systematicCallsignChange, $vanityCallsignChange, $vanityRelationship, $previousCallsign, $previousOperatorClass, $trusteeName);
+    
+                foreach($importer as $imp){
+                    $recordType = $imp[0];
+                    $uniqueSystemIdentifier = $imp[1];
+                    $ulsFileNum = $imp[2];
+                    $ebfNumber = $imp[3];
+                    $callsign = $imp[4];
+                    $operatorClass = $imp[5];
+                    $groupCode = $imp[6];
+                    $regionCode = $imp[7];
+                    $trusteeCallsign = $imp[8];
+                    $trusteeIndicator = $imp[9];
+                    $physicianCertification = $imp[10];
+                    $veSignature = $imp[11];
+                    $systematicCallsignChange = $imp[12];
+                    $vanityCallsignChange = $imp[13];
+                    $vanityRelationship = $imp[14];
+                    $previousCallsign = $imp[15];
+                    $previousOperatorClass = $imp[16];
+                    $trusteeName = $imp[17];
+                    
+                    $insertSQL->execute();
+                }
+                $insertSQL->close();
+    
+                mysqli_query($db, $inquiries->amUpdater);
+                
+                if(!$db->error){
+                    echo "- Imported AM table: ".$db->info.PHP_EOL;
+                } else {
+                    echo "- Error importing AM table: ".$db->error.PHP_EOL;
+                }
+                break;
 
-            foreach($importer as $imp){
-                $recordType = $imp[0];
-                $uniqueSystemIdentifier = $imp[1];
-                $ulsFileNum = $imp[2];
-                $ebfNumber = $imp[3];
-                $callsign = $imp[4];
-                $operatorClass = $imp[5];
-                $groupCode = $imp[6];
-                $regionCode = $imp[7];
-                $trusteeCallsign = $imp[8];
-                $trusteeIndicator = $imp[9];
-                $physicianCertification = $imp[10];
-                $veSignature = $imp[11];
-                $systematicCallsignChange = $imp[12];
-                $vanityCallsignChange = $imp[13];
-                $vanityRelationship = $imp[14];
-                $previousCallsign = $imp[15];
-                $previousOperatorClass = $imp[16];
-                $trusteeName = $imp[17];
-                $insertSQL->execute();
-
-            }
-            $insertSQL->close();
-
-            mysqli_query($con, "REPLACE INTO PUBACC_AM (record_type, unique_system_identifier, uls_file_num, ebf_number, callsign, operator_class, group_code, region_code, trustee_callsign, trustee_indicator, physician_certification, ve_signature, systematic_callsign_change, vanity_callsign_change, vanity_relationship, previous_callsign, previous_operator_class, trustee_name) SELECT * FROM AM_TEMP;");
-            var_dump($con);
+            case "CO":
+                echo "Do CO things here.".PHP_EOL;
+                break;
+            case "EN":
+                echo "Do EN things here.".PHP_EOL;
+                break;
+            case "HD":
+                echo "Do HD things here.".PHP_EOL;
+                break;
+            case "HS":
+                echo "Do HS things here.".PHP_EOL;
+                break;
+            case "LA":
+                echo "Do LA things here.".PHP_EOL;
+                break;
+            case "SC":
+                echo "Do SC things here.".PHP_EOL;
+                break;
+            case "SF":
+                echo "Do SF things here.".PHP_EOL;
+                break;
         }
     }
 }
@@ -168,5 +196,29 @@ function stream_notification_callback($notification_code, $severity, $message, $
                 }
             }
             break;
+    }
+}
+
+function getFileContents($base, $name) {
+    $data = file_get_contents($base.'-'.$name.'-new.dat');
+        $fp = fopen("php://temp",'r+');
+        fputs($fp, $data);
+        rewind($fp);
+        $importer = [];
+        while (($csv = fgetcsv($fp,0,"|")) !== FALSE) {
+            $importer[] = $csv;
+        }
+        fclose($fp);
+
+        return $importer;
+}
+
+
+class sqlInquiries {
+    public $amTempInserter = "INSERT INTO AM_TEMP (record_type, unique_system_identifier, uls_file_num, ebf_number, callsign, operator_class, group_code, region_code, trustee_callsign, trustee_indicator, physician_certification, ve_signature, systematic_callsign_change, vanity_callsign_change, vanity_relationship, previous_callsign, previous_operator_class, trustee_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+    public $amUpdater = "REPLACE INTO PUBACC_AM (record_type, unique_system_identifier, uls_file_num, ebf_number, callsign, operator_class, group_code, region_code, trustee_callsign, trustee_indicator, physician_certification, ve_signature, systematic_callsign_change, vanity_callsign_change, vanity_relationship, previous_callsign, previous_operator_class, trustee_name) SELECT * FROM AM_TEMP;";
+
+    function createAMTemp($con){
+        mysqli_query($con, "CREATE TEMPORARY TABLE AM_TEMP LIKE PUBACC_AM;");
     }
 }

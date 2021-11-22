@@ -17,12 +17,11 @@
 require_once('lib/functions.php');
 require_once('lib/databaseConnect.php');
 
-ini_set('memory_limit', '10G');
+ini_set('memory_limit', '12G');
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 $fcc_uls_url = 'https://data.fcc.gov/download/pub/uls/complete/';
-// $fcc_uls_url = 'http://wireless.fcc.gov/uls/data/complete/';
 
 /*
  * Comment out any files you do not need/want
@@ -35,15 +34,15 @@ $files = array(
 	//'l_coast',
 	//'l_micro',
 	//'l_paging',
-    //  'a_amat',
-	'l_amat'
+    //  'a_amat', // amateur application database
+	'l_amat', // amateur license database
 );
 
 foreach($files as $file) {
 	downloadFile($fcc_uls_url . $file . '.zip');
 	extractZip($file . '.zip');
 	processFilesRemoveBlankLines($file);
-	openFile($file,$con);
+	importFiles($file,$licenseDB,$applicationDB);
 }
 
 echo('Overall Memory Used: ' . (memory_get_peak_usage(true) / 1024 / 1024) . 'MB'.PHP_EOL);
