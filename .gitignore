@@ -2,3 +2,4 @@
 *.DAT
 *.zip
 *counts
+lib/database*

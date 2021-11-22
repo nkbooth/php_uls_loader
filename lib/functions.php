@@ -1,7 +1,8 @@
 <?php
 
 function extractZip($filename) {
-    $names = array('counts', 'CP.dat', 'EM.dat', 'EN.dat', 'FR.dat', 'HD.dat', 'LO.dat', 'HS.dat');
+    //$names = array('counts', 'CP.dat', 'EM.dat', 'EN.dat', 'FR.dat', 'HD.dat', 'LO.dat', 'HS.dat');
+    $names = array('counts', 'AM.dat', 'CO.dat', 'EN.dat', 'HD.dat', 'HS.dat', 'LA.dat', 'SC.dat', 'SF.dat');
     $basename = explode('.', $filename);
     $basename = $basename[0];
 
@@ -33,10 +34,11 @@ function extractZip($filename) {
 }
 
 function processFilesRemoveBlankLines($base) {
-    $names = array('CP', 'EM', 'EN', 'FR', 'HD', 'LO', 'HS');
+    // $names = array('CP', 'EM', 'EN', 'FR', 'HD', 'LO', 'HS');
+    $names = array('AM', 'CO', 'EN', 'HD', 'HS', 'LA', 'SC', 'SF');
 
     foreach ($names as $name) {
-        if(file_exists($name)) {
+        if(file_exists($base.'-'.$name.'.dat')) {
             echo ('- Re-writing ' . $name . '.dat with blank lines removed.' . "\n");
             $fhorig = fopen($base . '-' . $name . '.dat', 'r');
             $fhnew = fopen($base . '-' . $name . '-new.dat', 'w+');
@@ -78,6 +80,60 @@ function downloadFile($url) {
         echo " Done!\n";
     }
 }
+
+function openFile($base, $con){
+    $names = array('AM', 'CO', 'EN', 'HD', 'HS', 'LA', 'SC', 'SF');
+    
+    foreach ($names as $name){
+        echo "Opening $base-$name-new.dat\n";
+        $data = file_get_contents($base.'-'.$name.'-new.dat');
+        $fp = fopen("php://temp",'r+');
+        fputs($fp, $data);
+        rewind($fp);
+        
+        $importer = [];
+        while (($temper = fgetcsv($fp,0,"|")) !== FALSE) {
+            $importer[] = $temper;
+        }
+        fclose($fp);
+
+        if($name == "AM") {
+            mysqli_query($con, "CREATE TEMPORARY TABLE AM_TEMP LIKE PUBACC_AM;");
+
+            $insertSQL = $con->prepare("INSERT INTO AM_TEMP (record_type, unique_system_identifier, uls_file_num, ebf_number, callsign, operator_class, group_code, region_code, trustee_callsign, trustee_indicator, physician_certification, ve_signature, systematic_callsign_change, vanity_callsign_change, vanity_relationship, previous_callsign, previous_operator_class, trustee_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
+            $insertSQL->bind_param("sisssssissssssssss", $recordType, $uniqueSystemIdentifier, $ulsFileNum, $ebfNumber, $callsign, $operatorClass, $groupCode, $regionCode, $trusteeCallsign, $trusteeIndicator, $physicianCertification, $veSignature, $systematicCallsignChange, $vanityCallsignChange, $vanityRelationship, $previousCallsign, $previousOperatorClass, $trusteeName);
+
+            foreach($importer as $imp){
+                $recordType = $imp[0];
+                $uniqueSystemIdentifier = $imp[1];
+                $ulsFileNum = $imp[2];
+                $ebfNumber = $imp[3];
+                $callsign = $imp[4];
+                $operatorClass = $imp[5];
+                $groupCode = $imp[6];
+                $regionCode = $imp[7];
+                $trusteeCallsign = $imp[8];
+                $trusteeIndicator = $imp[9];
+                $physicianCertification = $imp[10];
+                $veSignature = $imp[11];
+                $systematicCallsignChange = $imp[12];
+                $vanityCallsignChange = $imp[13];
+                $vanityRelationship = $imp[14];
+                $previousCallsign = $imp[15];
+                $previousOperatorClass = $imp[16];
+                $trusteeName = $imp[17];
+                $insertSQL->execute();
+
+            }
+            $insertSQL->close();
+
+            mysqli_query($con, "REPLACE INTO PUBACC_AM (record_type, unique_system_identifier, uls_file_num, ebf_number, callsign, operator_class, group_code, region_code, trustee_callsign, trustee_indicator, physician_certification, ve_signature, systematic_callsign_change, vanity_callsign_change, vanity_relationship, previous_callsign, previous_operator_class, trustee_name) SELECT * FROM AM_TEMP;");
+            var_dump($con);
+        }
+    }
+}
+
+
 
 function stream_notification_callback($notification_code, $severity, $message, $message_code, $bytes_transferred, $bytes_max) {
     static $filesize = null;
